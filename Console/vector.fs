@@ -1,5 +1,4 @@
 ﻿module vector
-
     type vector3 = 
         {   x : float
             y : float
