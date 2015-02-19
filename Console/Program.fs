@@ -11,7 +11,7 @@ type FysicsWindow() =
         this.VSync <- VSyncMode.On
 
     override this.OnUpdateFrame(e) =
-        let a = base.Keyboard.[OpenTK.Input.Key.Escape]
+        let a = this.Keyboard.[Key.Escape]
         if a then do
             this.Exit()
 
