@@ -23,6 +23,7 @@ let unitCube = {
             |]
         indices = [| |] 
     }
+
 type FysicsWindow() = 
     inherit GameWindow()
 
@@ -41,10 +42,15 @@ type FysicsWindow() =
 
     override this.OnRenderFrame(e) =
         GL.Clear(ClearBufferMask.ColorBufferBit ||| ClearBufferMask.DepthBufferBit)
+
         GL.MatrixMode(MatrixMode.Projection)
-        GL.LoadIdentity()
-        GL.Ortho(-1.0, 1.0, -1.0, 1.0, -1.0, 4.0)
-        GL.Rotate(elapsedTime, Vector3d.UnitY)
+        let aspectRatio = (float)this.Width / (float)this.Height
+        let projection = Matrix4d.CreatePerspectiveFieldOfView(2.0, aspectRatio, 0.1, 100.0)
+        GL.LoadMatrix(ref projection)
+
+        GL.MatrixMode(MatrixMode.Modelview)
+        let modelView = Matrix4d.RotateY(elapsedTime) * Matrix4d.LookAt(new Vector3d(0.0, 1.0, 2.0), Vector3d.Zero, Vector3d.UnitY)
+        GL.LoadMatrix(ref modelView)
 
         GL.PointSize(10.f)
         GL.Begin(BeginMode.Points)
