@@ -21,8 +21,31 @@ let unitCube = {
                 new Vector3d(0.5, 0.5, 0.5)
                 new Vector3d(-0.5, 0.5, 0.5)
             |]
-        indices = [| |] 
+        indices = 
+            [| 
+                4; 6; 7; //front
+                4; 5; 6;
+                6; 5; 1; //right
+                6; 1; 2;
+                0; 4; 7; //left
+                0; 7; 3;
+                0; 2; 1; //back
+                0; 3; 2;
+                7; 6; 2; //top
+                7; 2; 3;
+                4; 5; 1; //bottom
+                4; 1; 0;
+            |] 
     }
+
+let colors = [|
+        Color.Azure
+        Color.Beige
+        Color.Brown
+        Color.Crimson
+        Color.HotPink
+        Color.Honeydew
+    |]
 
 type FysicsWindow() = 
     inherit GameWindow()
@@ -49,15 +72,20 @@ type FysicsWindow() =
         GL.LoadMatrix(ref projection)
 
         GL.MatrixMode(MatrixMode.Modelview)
-        let modelView = Matrix4d.RotateY(elapsedTime) * Matrix4d.LookAt(new Vector3d(0.0, 1.0, 2.0), Vector3d.Zero, Vector3d.UnitY)
+        let modelView = Matrix4d.RotateY(elapsedTime) * Matrix4d.LookAt(new Vector3d(0.0, System.Math.Sin(elapsedTime), 2.0), Vector3d.Zero, Vector3d.UnitY)
         GL.LoadMatrix(ref modelView)
+        GL.CullFace(CullFaceMode.Back)
+        GL.Enable(EnableCap.CullFace)
+        GL.Enable(EnableCap.DepthTest)
+        GL.FrontFace(FrontFaceDirection.Ccw)
 
         GL.PointSize(10.f)
-        GL.Begin(BeginMode.Points)
+        GL.Begin(BeginMode.Triangles)
 
         GL.Color3(Color.MidnightBlue)
-        for v in unitCube.vertices do
-            GL.Vertex3(v)
+        for v in unitCube.indices do
+            GL.Color3(colors.[v % colors.Length])
+            GL.Vertex3(unitCube.vertices.[v])
 
         GL.End();
 
