@@ -39,12 +39,14 @@ let unitCube = {
     }
 
 let colors = [|
-        Color.Azure
-        Color.Beige
-        Color.Brown
-        Color.Crimson
-        Color.HotPink
-        Color.Honeydew
+    Color.AliceBlue
+    Color.Beige
+    Color.Chocolate
+    Color.Cyan
+    Color.Green
+    Color.Aqua
+    Color.LimeGreen
+    Color.Tomato
     |]
 
 type FysicsWindow() = 
@@ -83,9 +85,11 @@ type FysicsWindow() =
         GL.Begin(BeginMode.Triangles)
 
         GL.Color3(Color.MidnightBlue)
-        for v in unitCube.indices do
-            GL.Color3(colors.[v % colors.Length])
-            GL.Vertex3(unitCube.vertices.[v])
+        let groupedIndices = Seq.mapi (fun i index -> i / 3, index) unitCube.indices
+        for gi in groupedIndices do
+            let group, index = gi
+            GL.Color3(colors.[group % colors.Length])
+            GL.Vertex3(unitCube.vertices.[index])
 
         GL.End();
 
