@@ -3,12 +3,10 @@
     open particle
 
     let integrate dt p =
-        let nextPosition = dt * p.position
+        let nextPosition = p.position + dt * p.velocity
         let nextVelocity = dt * p.acceleration + p.velocity
         let dampedVelocity = p.damping ** dt * nextVelocity
-        { 
-            p with position = nextPosition; velocity = nextPosition 
-        };
+        { p with position = nextPosition; velocity = dampedVelocity };
 
     let integrateAll dt particles =
         particles

@@ -6,7 +6,7 @@
 
         static member (+) (a, b) =
             {   x = a.x + b.x
-                y = a.y + b.x
+                y = a.y + b.y
                 z = a.z + b.z }
 
         static member (*) (s, v) =

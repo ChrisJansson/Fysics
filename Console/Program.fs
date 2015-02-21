@@ -1,4 +1,6 @@
 ﻿open vector
+open particle
+open integrator
 open OpenTK
 open OpenTK.Input
 open OpenTK.Graphics.OpenGL
@@ -49,15 +51,28 @@ let colors = [|
     Color.Tomato
     |]
 
+let drawCube (pos : Vector3d) (color : Color) =
+    GL.Color3(color)
+    for i in unitCube.indices do
+        GL.Vertex3(unitCube.vertices.[i] + pos)
+
+        
 type FysicsWindow() = 
     inherit GameWindow()
 
     let mutable elapsedTime = 0.0
+    let mutable particle = {
+            position = { x = 0.0; y = 4.0; z = 0.0 }
+            velocity = { x = 0.0; y = 0.0; z = 0.0 }
+            acceleration = { x = 0.0; y = -9.8; z = 0.0 }
+            damping = 0.999
+        }
 
     override this.OnLoad(e) =
         this.VSync <- VSyncMode.On
 
     override this.OnUpdateFrame(e) =
+        particle <- (integrate e.Time particle)
         let a = this.Keyboard.[Key.Escape]
         if a then do
             this.Exit()
@@ -74,7 +89,7 @@ type FysicsWindow() =
         GL.LoadMatrix(ref projection)
 
         GL.MatrixMode(MatrixMode.Modelview)
-        let modelView = Matrix4d.RotateY(elapsedTime) * Matrix4d.LookAt(new Vector3d(0.0, System.Math.Sin(elapsedTime), 2.0), Vector3d.Zero, Vector3d.UnitY)
+        let modelView = Matrix4d.LookAt(new Vector3d(0.0, 1.0, 5.0), Vector3d.Zero, Vector3d.UnitY)
         GL.LoadMatrix(ref modelView)
         GL.CullFace(CullFaceMode.Back)
         GL.Enable(EnableCap.CullFace)
@@ -84,12 +99,8 @@ type FysicsWindow() =
         GL.PointSize(10.f)
         GL.Begin(BeginMode.Triangles)
 
-        GL.Color3(Color.MidnightBlue)
-        let groupedIndices = Seq.mapi (fun i index -> i / 3, index) unitCube.indices
-        for gi in groupedIndices do
-            let group, index = gi
-            GL.Color3(colors.[group % colors.Length])
-            GL.Vertex3(unitCube.vertices.[index])
+        let p = particle.position
+        drawCube (new Vector3d(p.x, p.y, p.z)) Color.MidnightBlue
 
         GL.End();
 
