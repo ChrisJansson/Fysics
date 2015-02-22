@@ -27,7 +27,8 @@ type FysicsWindow() =
     inherit GameWindow()
 
     let mutable elapsedTime = 0.0
-    let mutable particle = {
+    let mutable particles = List.empty<particle>
+    let particleTemplate = {
             position = { x = 0.0; y = 4.0; z = 0.0 }
             velocity = { x = 0.0; y = 0.0; z = 0.0 }
             acceleration = { x = 0.0; y = -9.8; z = 0.0 }
@@ -38,7 +39,10 @@ type FysicsWindow() =
         this.VSync <- VSyncMode.On
 
     override this.OnUpdateFrame(e) =
-        particle <- (integrate e.Time particle)
+        if this.Keyboard.[Key.Space] then do
+            particles <- particleTemplate :: particles
+        particles <- particles |> List.filter (fun p -> p.position.y > -50.0)
+        particles <- Seq.toList (integrateAll e.Time (List.toSeq particles))
         let a = this.Keyboard.[Key.Escape]
         if a then do
             this.Exit()
@@ -65,8 +69,9 @@ type FysicsWindow() =
         GL.PointSize(10.f)
         GL.Begin(BeginMode.Triangles)
 
-        let p = particle.position
-        drawCube (new Vector3d(p.x, p.y, p.z)) Color.MidnightBlue
+        for particle in particles do
+            let p = particle.position
+            drawCube (new Vector3d(p.x, p.y, p.z)) Color.MidnightBlue
 
         GL.End();
 
