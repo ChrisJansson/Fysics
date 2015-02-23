@@ -5,6 +5,8 @@ type mesh = {
         vertices : Vector3d []
         indices : int []
     }
+    with
+    member this.verticesSize = this.vertices.Length * sizeof<Vector3>
 
 let unitCube = { 
         vertices = 
