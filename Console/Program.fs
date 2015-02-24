@@ -2,6 +2,7 @@
 open particle
 open integrator
 open primitives
+open shader
 open OpenTK
 open OpenTK.Input
 open OpenTK.Graphics.OpenGL
@@ -34,65 +35,10 @@ void main()
     outColor = vec4(1.0, 1.0, 1.0, 1.0);
 }"
 
-type shaderCompilationStatus = 
-    | Success of shaderId : int
-    | Error of message : string
 
-let getShaderCompilationError (shaderId:int) =
-    GL.GetShaderInfoLog(shaderId)
-
-let getShaderCompilationStatus (shaderId:int) =
-    let mutable status = -1
-    GL.GetShader(shaderId, ShaderParameter.CompileStatus, &status)
-    let convertedStatus = enum status
-    match convertedStatus with
-        | Boolean.True -> Success shaderId
-        | _ -> Error (getShaderCompilationError shaderId)
-
-let makeShader shaderType source =
-    let shaderId = GL.CreateShader shaderType
-    GL.ShaderSource(shaderId, source)
-    GL.CompileShader(shaderId)
-    getShaderCompilationStatus shaderId
-
-let makeProgram shaders =
-    let programId = GL.CreateProgram()
-    for shaderId in shaders do
-        GL.AttachShader(programId, shaderId)
-    GL.LinkProgram programId
-
-let compiledSuccessfully shader =
-    match shader with
-    | Success shaderId -> true
-    | Error message -> false
-
-let rawShaders = [| 
+let rawShaders = [ 
     (ShaderType.VertexShader, vertexShaderSource); 
-    (ShaderType.FragmentShader, fragmentShaderSource) |]
-
-let rec extract compiledShaders =
-    match compiledShaders with
-    | [] -> Some []
-    | head::tail -> 
-        match head with
-        | Success shaderId -> 
-            match extract tail with
-            | Some shaderIds -> Some (head::shaderIds)
-            | None -> None
-        | Error message -> None
-
-let matchStuff s shader =
-    let pair = (s, shader)
-    match pair with
-    | (Some x, Success shaderId) -> Some (shaderId::x)
-    | _ -> None
-
-let extract2 compiledShaders =
-    compiledShaders |> Seq.fold (fun s shader -> matchStuff) List.empty compiledShaders
-
-let stuff =
-    let compiledShaders = rawShaders |> Seq.map (fun (st, ss) -> makeShader st ss)
-
+    (ShaderType.FragmentShader, fragmentShaderSource) ]
 
 let drawCube (pos : Vector3d) (color : Color) =
     GL.Color3(color)
@@ -112,6 +58,7 @@ type FysicsWindow() =
         }
 
     override this.OnLoad(e) =
+        let programResult = makeProgram rawShaders
         this.VSync <- VSyncMode.On
 
     override this.OnUpdateFrame(e) =
