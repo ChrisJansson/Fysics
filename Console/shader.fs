@@ -51,3 +51,15 @@ let makeProgram shaders =
     match compileShaders shaders with
     | Success shaderIds -> Some (linkProgram shaderIds)
     | Error messages -> None
+
+let glSetUniform uniformId (matrix:Matrix4d byref) =
+    GL.UniformMatrix4(uniformId, false, &matrix)
+
+let uniformSetterForMatrix4d uniformId =
+    fun (matrix:Matrix4d) -> 
+        let mutable m = matrix
+        GL.UniformMatrix4(uniformId, false, &m)
+    
+type MatrixUniform  = {
+        set : OpenTK.Matrix4d -> unit
+    }
