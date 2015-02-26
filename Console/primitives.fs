@@ -2,7 +2,7 @@
 open OpenTK
 
 type mesh = { 
-        vertices : Vector3d []
+        vertices : Vector3 []
         indices : int []
     }
     with
@@ -11,14 +11,14 @@ type mesh = {
 let unitCube = { 
         vertices = 
             [| 
-                new Vector3d(-0.5, -0.5, -0.5) //back
-                new Vector3d(0.5, -0.5, -0.5)
-                new Vector3d(0.5, 0.5, -0.5)
-                new Vector3d(-0.5, 0.5, -0.5)
-                new Vector3d(-0.5, -0.5, 0.5) //front
-                new Vector3d(0.5, -0.5, 0.5)
-                new Vector3d(0.5, 0.5, 0.5)
-                new Vector3d(-0.5, 0.5, 0.5)
+                new Vector3(-0.5f, -0.5f, -0.5f) //back
+                new Vector3(0.5f, -0.5f, -0.5f)
+                new Vector3(0.5f, 0.5f, -0.5f)
+                new Vector3(-0.5f, 0.5f, -0.5f)
+                new Vector3(-0.5f, -0.5f, 0.5f) //front
+                new Vector3(0.5f, -0.5f, 0.5f)
+                new Vector3(0.5f, 0.5f, 0.5f)
+                new Vector3(-0.5f, 0.5f, 0.5f)
             |]
         indices = 
             [| 
