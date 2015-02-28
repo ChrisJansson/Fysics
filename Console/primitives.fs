@@ -3,10 +3,11 @@ open OpenTK
 
 type mesh = { 
         vertices : Vector3 []
-        indices : int []
+        indices : uint16 []
     }
     with
     member this.verticesSize = this.vertices.Length * sizeof<Vector3>
+    member this.elementSize = this.indices.Length * sizeof<uint16>
 
 let unitCube = { 
         vertices = 
@@ -34,5 +35,5 @@ let unitCube = {
                 7; 2; 3;
                 4; 1; 5; //bottom
                 4; 0; 1;
-            |] 
+            |] |> Array.map (fun i -> uint16 i)
     }

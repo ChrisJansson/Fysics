@@ -56,10 +56,13 @@ let glSetUniform uniformId (matrix:Matrix4d byref) =
     GL.UniformMatrix4(uniformId, false, &matrix)
 
 let uniformSetterForMatrix4d uniformId =
-    fun (matrix:Matrix4d) -> 
+    fun (matrix:Matrix4) -> 
         let mutable m = matrix
         GL.UniformMatrix4(uniformId, false, &m)
+
+type MatrixUniform  = { set : OpenTK.Matrix4 -> unit } 
+
+let makeMatrixUniform (programId:int) uniformName =
+    let uniformLocation = GL.GetUniformLocation(programId, uniformName)
+    { set = uniformSetterForMatrix4d uniformLocation }
     
-type MatrixUniform  = {
-        set : OpenTK.Matrix4d -> unit
-    }
