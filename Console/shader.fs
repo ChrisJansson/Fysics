@@ -62,7 +62,18 @@ let uniformSetterForMatrix4d uniformId =
 
 type MatrixUniform  = { set : OpenTK.Matrix4 -> unit } 
 
+let uniformSetterForMatrix3 uniformId =
+    fun (matrix:Matrix3) ->
+        let mutable m = matrix
+        GL.UniformMatrix3(uniformId, false, &m)
+
+type Matrix3Uniform = { set : OpenTK.Matrix3 -> unit }
+
 let makeMatrixUniform (programId:int) uniformName =
     let uniformLocation = GL.GetUniformLocation(programId, uniformName)
-    { set = uniformSetterForMatrix4d uniformLocation }
+    { MatrixUniform.set = uniformSetterForMatrix4d uniformLocation }
+
+let makeMatrix3Uniform (programId:int) uniformName =
+    let uniformLocation = GL.GetUniformLocation(programId, uniformName)
+    { Matrix3Uniform.set = uniformSetterForMatrix3 uniformLocation }
     

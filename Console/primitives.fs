@@ -37,3 +37,30 @@ let unitCube = {
                 4; 0; 1;
             |] |> Array.map (fun i -> uint16 i)
     }
+
+type V3N3 = 
+    struct
+        val Vertex : Vector3
+        val Normal : Vector3
+        new(vertex : Vector3, normal : Vector3) = { Vertex = vertex; Normal = normal }
+    end
+
+type meshWithNormals = {
+        vertices : V3N3 []
+    }
+
+let unitCubeWithNormals =
+    let vertices = unitCube.indices |> Array.map (fun i -> unitCube.vertices.[int i])
+    let normals = Array.zeroCreate<Vector3> vertices.Length
+    for i = 0 to (vertices.Length / 3) - 1 do
+        let v0 = vertices.[i * 3]
+        let v1 = vertices.[i * 3 + 1]
+        let v2 = vertices.[i * 3 + 2]
+        let first = v1 - v0
+        let second = v2 - v0
+        let normal = Vector3.Cross(first, second).Normalized()
+        normals.[i * 3] <-  normal
+        normals.[i * 3 + 1] <-  normal
+        normals.[i * 3 + 2] <-  normal
+    { vertices = Array.zip vertices normals |> Array.map (fun (v, n) -> new V3N3(v, n))}
+        
