@@ -35,15 +35,15 @@ let transferMeshWithNormals (m:meshWithNormals) =
 let drawCube m =
     GL.DrawElements(BeginMode.Triangles, m.indices.Length, DrawElementsType.UnsignedShort, 0)
 
-let drawCubeWithNormals (m:meshWithNormals) =
-    GL.DrawArrays(PrimitiveType.Points, 0, m.vertices.Length)
+let drawCubeWithNormals (m:meshWithNormals) (primitiveType:PrimitiveType) =
+    GL.DrawArrays(primitiveType, 0, m.vertices.Length)
         
 type FysicsWindow() = 
     inherit GameWindow()
 
     let mutable elapsedTime = 0.0
     let mutable particles = List.empty<particle>
-    //[<DefaultValue>] val mutable program : SimpleShaderProgram.SimpleProgram
+    [<DefaultValue>] val mutable program : SimpleShaderProgram.SimpleProgram
     [<DefaultValue>] val mutable program2 : NormalDebugShaderProgram.SimpleProgram
     let particleTemplate = {
             position = { x = 0.0; y = 4.0; z = 0.0 }
@@ -53,10 +53,9 @@ type FysicsWindow() =
         }
 
     override this.OnLoad(e) =
-//        transferMesh unitCube
         transferMeshWithNormals unitCubeWithNormals
         this.program2 <- NormalDebugShaderProgram.makeSimpleShaderProgram
-        //this.program <- SimpleShaderProgram.makeSimpleShaderProgram
+        this.program <- SimpleShaderProgram.makeSimpleShaderProgram
         GL.UseProgram this.program2.ProgramId
         GL.LineWidth(1.0f)
         this.VSync <- VSyncMode.On
@@ -78,19 +77,24 @@ type FysicsWindow() =
         GL.Clear(ClearBufferMask.ColorBufferBit ||| ClearBufferMask.DepthBufferBit)
         let aspectRatio = (float)this.Width / (float)this.Height
         let projectionMatrix = Matrix4.CreatePerspectiveFieldOfView(2.0f, float32 aspectRatio, 0.1f, 100.0f)
-        let cameraMatrix = Matrix4.LookAt(new Vector3(0.0f, 1.0f, 5.0f), Vector3.Zero, Vector3.UnitY)
+        let cameraMatrix = Matrix4.LookAt(new Vector3(5.0f, 1.0f, 5.0f), Vector3.Zero, Vector3.UnitY)
         this.program2.ProjectionMatrixUniform.set projectionMatrix
         this.program2.ViewMatrix.set cameraMatrix
+        this.program.ProjectionMatrixUniform.set projectionMatrix
+        this.program.ViewMatrix.set cameraMatrix
 
         for particle in particles do
             let p = particle.position
-            let translation = Matrix4.Identity
+            let translation = Matrix4.CreateTranslation(float32 p.x, float32 p.y, float32 p.z)
             let modelToProjection = translation * cameraMatrix;
             let normalMatrix = new Matrix3(Matrix4.Transpose(modelToProjection.Inverted()))
+            GL.UseProgram this.program2.ProgramId
             this.program2.ModelMatrix.set translation
             this.program2.NormalMatrix.set normalMatrix
-            drawCubeWithNormals unitCubeWithNormals
-//            drawCube unitCube
+            drawCubeWithNormals unitCubeWithNormals PrimitiveType.Points
+            GL.UseProgram this.program.ProgramId
+            this.program.ModelMatrix.set translation
+            drawCubeWithNormals unitCubeWithNormals PrimitiveType.Triangles
 
         this.SwapBuffers();
         elapsedTime <- elapsedTime + e.Time

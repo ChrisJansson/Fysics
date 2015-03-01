@@ -41,7 +41,7 @@ void main() {
     gl_Position = transformedPosition;
     EmitVertex();
 
-    gl_Position = transformedPosition + projectionMatrix * transformedNormal;
+    gl_Position = transformedPosition + projectionMatrix * (transformedNormal * 0.5);
     EmitVertex();
 
     EndPrimitive();
