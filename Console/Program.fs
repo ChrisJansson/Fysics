@@ -53,12 +53,19 @@ let makeRenderJob particle mesh cameraMatrix =
             }
         }
     renderJob
+
+let clamp min max v =
+    match v with
+    | _ when v < min -> min
+    | _ when v > max -> max
+    | _ -> v
         
 type FysicsWindow() = 
     inherit GameWindow()
 
-    let mutable elapsedTime = 0.0
+    let mutable integrationSpeed = 1.0
     let mutable particles = List.empty<particle>
+    let clampIntegrationSpeed = clamp 0.01 2.0
     [<DefaultValue>] val mutable program : SimpleShaderProgram.SimpleProgram
     [<DefaultValue>] val mutable program2 : NormalDebugShaderProgram.SimpleProgram
     let particleTemplate = {
@@ -77,14 +84,22 @@ type FysicsWindow() =
         this.VSync <- VSyncMode.On
 
     override this.OnUpdateFrame(e) =
+        if this.Keyboard.[Key.Escape] then do
+            this.Exit()
         if this.Keyboard.[Key.Space] then do
             particles <- particleTemplate :: particles
-        let a = this.Keyboard.[Key.Escape]
-        if a then do
-            this.Exit()
+        if this.Keyboard.[Key.P] then do
+            integrationSpeed <- clampIntegrationSpeed integrationSpeed + 0.01
+        if this.Keyboard.[Key.O] then do
+            integrationSpeed <- 1.0
+        if this.Keyboard.[Key.I] then do
+            integrationSpeed <- clampIntegrationSpeed integrationSpeed - 0.01
 
-        particles <- particles |> List.filter (fun p -> p.position.y > -50.0)
-        particles <- Seq.toList (integrateAll e.Time (List.toSeq particles))
+        particles <- particles 
+            |> List.filter (fun p -> p.position.y > -50.0)
+            |> List.toSeq 
+            |> integrateAll (e.Time * integrationSpeed)
+            |> Seq.toList
 
     override this.OnResize(e) =
         GL.Viewport(0, 0, this.Width, this.Height)
@@ -101,7 +116,7 @@ type FysicsWindow() =
             }
         let renderJob = {
                 StaticContext = staticRenderContext
-                RenderJobs = particles |> List.map (fun p -> makeRenderJob p unitCubeWithNormals cameraMatrix)ndividualRenderJobs
+                RenderJobs = particles |> List.map (fun p -> makeRenderJob p unitCubeWithNormals cameraMatrix)
             }
 
         GL.UseProgram this.program.ProgramId
@@ -120,7 +135,6 @@ type FysicsWindow() =
             drawCubeWithNormals j.Mesh PrimitiveType.Points
 
         this.SwapBuffers();
-        elapsedTime <- elapsedTime + e.Time
 
 [<EntryPoint>]
 let main argv =
