@@ -3,6 +3,7 @@ open particle
 open integrator
 open primitives
 open shader
+open Rendering
 open OpenTK
 open OpenTK.Input
 open OpenTK.Graphics.OpenGL
@@ -37,6 +38,21 @@ let drawCube m =
 
 let drawCubeWithNormals (m:meshWithNormals) (primitiveType:PrimitiveType) =
     GL.DrawArrays(primitiveType, 0, m.vertices.Length)
+
+let makeRenderJob particle mesh cameraMatrix =
+       
+    let p = particle.position
+    let translation = Matrix4.CreateTranslation(float32 p.x, float32 p.y, float32 p.z)
+    let (modelToProjection:Matrix4) = translation * cameraMatrix;
+    let normalMatrix = new Matrix3(Matrix4.Transpose(modelToProjection.Inverted()))
+    let renderJob = {
+            Mesh = mesh
+            IndividualContext = {
+                                ModelMatrix = translation
+                                NormalMatrix = normalMatrix
+            }
+        }
+    renderJob
         
 type FysicsWindow() = 
     inherit GameWindow()
@@ -78,23 +94,30 @@ type FysicsWindow() =
         let aspectRatio = (float)this.Width / (float)this.Height
         let projectionMatrix = Matrix4.CreatePerspectiveFieldOfView(2.0f, float32 aspectRatio, 0.1f, 100.0f)
         let cameraMatrix = Matrix4.LookAt(new Vector3(5.0f, 1.0f, 5.0f), Vector3.Zero, Vector3.UnitY)
-        this.program2.ProjectionMatrixUniform.set projectionMatrix
-        this.program2.ViewMatrix.set cameraMatrix
-        this.program.ProjectionMatrixUniform.set projectionMatrix
-        this.program.ViewMatrix.set cameraMatrix
 
-        for particle in particles do
-            let p = particle.position
-            let translation = Matrix4.CreateTranslation(float32 p.x, float32 p.y, float32 p.z)
-            let modelToProjection = translation * cameraMatrix;
-            let normalMatrix = new Matrix3(Matrix4.Transpose(modelToProjection.Inverted()))
-            GL.UseProgram this.program2.ProgramId
-            this.program2.ModelMatrix.set translation
-            this.program2.NormalMatrix.set normalMatrix
-            drawCubeWithNormals unitCubeWithNormals PrimitiveType.Points
-            GL.UseProgram this.program.ProgramId
-            this.program.ModelMatrix.set translation
-            drawCubeWithNormals unitCubeWithNormals PrimitiveType.Triangles
+        let staticRenderContext = {
+                ProjectionMatrix = projectionMatrix
+                ViewMatrix = cameraMatrix
+            }
+        let renderJob = {
+                StaticContext = staticRenderContext
+                RenderJobs = particles |> List.map (fun p -> makeRenderJob p unitCubeWithNormals cameraMatrix)ndividualRenderJobs
+            }
+
+        GL.UseProgram this.program.ProgramId
+        this.program.ProjectionMatrixUniform.set renderJob.StaticContext.ProjectionMatrix
+        this.program.ViewMatrix.set renderJob.StaticContext.ViewMatrix
+        for j in renderJob.RenderJobs do
+            this.program.ModelMatrix.set j.IndividualContext.ModelMatrix
+            drawCubeWithNormals j.Mesh PrimitiveType.Triangles
+
+        GL.UseProgram this.program2.ProgramId
+        this.program2.ProjectionMatrixUniform.set renderJob.StaticContext.ProjectionMatrix
+        this.program2.ViewMatrix.set renderJob.StaticContext.ViewMatrix
+        for j in renderJob.RenderJobs do
+            this.program2.ModelMatrix.set j.IndividualContext.ModelMatrix
+            this.program2.NormalMatrix.set j.IndividualContext.NormalMatrix
+            drawCubeWithNormals j.Mesh PrimitiveType.Points
 
         this.SwapBuffers();
         elapsedTime <- elapsedTime + e.Time
