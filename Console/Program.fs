@@ -79,8 +79,8 @@ type FysicsWindow() =
         transferMeshWithNormals unitCubeWithNormals
         this.program2 <- NormalDebugShaderProgram.makeSimpleShaderProgram
         this.program <- SimpleShaderProgram.makeSimpleShaderProgram
-        GL.UseProgram this.program2.ProgramId
         GL.LineWidth(1.0f)
+        GL.Enable(EnableCap.DepthTest)
         this.VSync <- VSyncMode.On
 
     override this.OnUpdateFrame(e) =
