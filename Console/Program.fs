@@ -36,29 +36,50 @@ let transferMeshWithNormals (m:meshWithNormals) =
 let drawCube m =
     GL.DrawElements(BeginMode.Triangles, m.indices.Length, DrawElementsType.UnsignedShort, 0)
 
-let drawCubeWithNormals (m:meshWithNormals) (primitiveType:PrimitiveType) =
+let drawMesh (m:meshWithNormals) (primitiveType:PrimitiveType) =
     GL.DrawArrays(primitiveType, 0, m.vertices.Length)
 
 let makeRenderJob particle mesh cameraMatrix =
-       
     let p = particle.position
     let translation = Matrix4.CreateTranslation(float32 p.x, float32 p.y, float32 p.z)
     let (modelToProjection:Matrix4) = translation * cameraMatrix;
     let normalMatrix = new Matrix3(Matrix4.Transpose(modelToProjection.Inverted()))
-    let renderJob = {
-            Mesh = mesh
-            IndividualContext = {
-                                ModelMatrix = translation
-                                NormalMatrix = normalMatrix
+    {
+        Mesh = mesh
+        IndividualContext = {
+                            ModelMatrix = translation
+                            NormalMatrix = normalMatrix
             }
         }
-    renderJob
 
 let clamp min max v =
     match v with
     | _ when v < min -> min
     | _ when v > max -> max
     | _ -> v
+
+type ShaderProgram =
+    | SimpleShaderProgram of SimpleShaderProgram.SimpleProgram
+    | NormalDebugShaderProgram of NormalDebugShaderProgram.SimpleProgram
+
+let render program renderJob =
+    match program with
+    | SimpleShaderProgram p ->
+        GL.UseProgram p.ProgramId
+        p.ProjectionMatrixUniform.set renderJob.StaticContext.ProjectionMatrix
+        p.ViewMatrix.set renderJob.StaticContext.ViewMatrix
+        for j in renderJob.RenderJobs do
+            p.ModelMatrix.set j.IndividualContext.ModelMatrix
+            drawMesh j.Mesh PrimitiveType.Triangles
+    | NormalDebugShaderProgram p ->
+        GL.UseProgram p.ProgramId
+        p.ProjectionMatrixUniform.set renderJob.StaticContext.ProjectionMatrix
+        p.ViewMatrix.set renderJob.StaticContext.ViewMatrix
+        for j in renderJob.RenderJobs do
+            p.ModelMatrix.set j.IndividualContext.ModelMatrix
+            p.NormalMatrix.set j.IndividualContext.NormalMatrix
+            drawMesh j.Mesh PrimitiveType.Points
+    
         
 type FysicsWindow() = 
     inherit GameWindow()
@@ -66,8 +87,8 @@ type FysicsWindow() =
     let mutable integrationSpeed = 1.0
     let mutable particles = List.empty<particle>
     let clampIntegrationSpeed = clamp 0.01 2.0
-    [<DefaultValue>] val mutable program : SimpleShaderProgram.SimpleProgram
-    [<DefaultValue>] val mutable program2 : NormalDebugShaderProgram.SimpleProgram
+    [<DefaultValue>] val mutable program : ShaderProgram
+    [<DefaultValue>] val mutable program2 : ShaderProgram
     let particleTemplate = {
             position = { x = 0.0; y = 4.0; z = 0.0 }
             velocity = { x = 0.0; y = 0.0; z = 0.0 }
@@ -77,8 +98,8 @@ type FysicsWindow() =
 
     override this.OnLoad(e) =
         transferMeshWithNormals unitCubeWithNormals
-        this.program2 <- NormalDebugShaderProgram.makeSimpleShaderProgram
-        this.program <- SimpleShaderProgram.makeSimpleShaderProgram
+        this.program <- SimpleShaderProgram SimpleShaderProgram.makeSimpleShaderProgram
+        this.program2 <- NormalDebugShaderProgram NormalDebugShaderProgram.makeSimpleShaderProgram
         GL.LineWidth(1.0f)
         GL.Enable(EnableCap.DepthTest)
         this.VSync <- VSyncMode.On
@@ -119,20 +140,8 @@ type FysicsWindow() =
                 RenderJobs = particles |> List.map (fun p -> makeRenderJob p unitCubeWithNormals cameraMatrix)
             }
 
-        GL.UseProgram this.program.ProgramId
-        this.program.ProjectionMatrixUniform.set renderJob.StaticContext.ProjectionMatrix
-        this.program.ViewMatrix.set renderJob.StaticContext.ViewMatrix
-        for j in renderJob.RenderJobs do
-            this.program.ModelMatrix.set j.IndividualContext.ModelMatrix
-            drawCubeWithNormals j.Mesh PrimitiveType.Triangles
-
-        GL.UseProgram this.program2.ProgramId
-        this.program2.ProjectionMatrixUniform.set renderJob.StaticContext.ProjectionMatrix
-        this.program2.ViewMatrix.set renderJob.StaticContext.ViewMatrix
-        for j in renderJob.RenderJobs do
-            this.program2.ModelMatrix.set j.IndividualContext.ModelMatrix
-            this.program2.NormalMatrix.set j.IndividualContext.NormalMatrix
-            drawCubeWithNormals j.Mesh PrimitiveType.Points
+        render this.program renderJob
+        render this.program2 renderJob
 
         this.SwapBuffers();
 
