@@ -21,6 +21,8 @@ let transferMesh (m:mesh) =
 
     GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 0, 0)
     GL.EnableVertexAttribArray(0)
+    GL.VertexAttribPointer(1, 3, VertexAttribPointerType.Float, false, sizeof<float32> * 6, sizeof<Vector3>)
+    GL.EnableVertexAttribArray(1)
 
 let transferMeshWithNormals (m:meshWithNormals) =
     let vbo = GL.GenBuffer()
@@ -70,6 +72,7 @@ let render program renderJob =
         p.ViewMatrix.set renderJob.StaticContext.ViewMatrix
         for j in renderJob.RenderJobs do
             p.ModelMatrix.set j.IndividualContext.ModelMatrix
+            p.NormalMatrix.set j.IndividualContext.NormalMatrix
             drawMesh j.Mesh PrimitiveType.Triangles
     | NormalDebugShaderProgram p ->
         GL.UseProgram p.ProgramId
@@ -107,8 +110,6 @@ type FysicsWindow() =
     override this.OnUpdateFrame(e) =
         if this.Keyboard.[Key.Escape] then do
             this.Exit()
-        if this.Keyboard.[Key.Space] then do
-            particles <- particleTemplate :: particles
         if this.Keyboard.[Key.P] then do
             integrationSpeed <- clampIntegrationSpeed integrationSpeed + 0.01
         if this.Keyboard.[Key.O] then do
@@ -121,6 +122,10 @@ type FysicsWindow() =
             |> List.toSeq 
             |> integrateAll (e.Time * integrationSpeed)
             |> Seq.toList
+
+    override this.OnKeyUp(e) =
+        if(e.Key = Key.Space) then do
+            particles <- particleTemplate :: particles
 
     override this.OnResize(e) =
         GL.Viewport(0, 0, this.Width, this.Height)

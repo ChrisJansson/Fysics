@@ -10,20 +10,32 @@ uniform mat4 viewMatrix;
 uniform mat4 modelMatrix;
 
 layout(location = 0) in vec3 position;
+layout(location = 1) in vec3 normal;
+
+out vec3 vNormal;
 
 void main()
 {
     gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(position, 1.0);
+    vNormal = normal;
 }"
 
 let fragmentShaderSource = 
     "#version 400 
 
+uniform mat3 normalMatrix;
+
 out vec4 outColor;
+in vec3 vNormal;
+
+vec3 lightDir = vec3(-1.0, 0.0, 0.0);
 
 void main()
 {
-    outColor = vec4(1.0, 1.0, 1.0, 1.0);
+    vec3 normal = normalize(normalMatrix * vNormal);
+    vec3 dirToLight = -lightDir;
+    float incidence = clamp(0.0, 1.0, dot(normal, dirToLight));
+    outColor = (incidence * vec4(1.0)) + vec4(0.2, 0.2, 0.2, 1.0);
 }"
 
 let rawShaders = [ 
@@ -35,6 +47,7 @@ type SimpleProgram = {
         ProjectionMatrixUniform : MatrixUniform
         ViewMatrix : MatrixUniform
         ModelMatrix : MatrixUniform
+        NormalMatrix : Matrix3Uniform
     }
 
 let makeSimpleShaderProgram =
@@ -45,6 +58,7 @@ let makeSimpleShaderProgram =
             ProjectionMatrixUniform = makeMatrixUniform programId "projectionMatrix"
             ViewMatrix = makeMatrixUniform programId "viewMatrix"
             ModelMatrix = makeMatrixUniform programId "modelMatrix"
+            NormalMatrix = makeMatrix3Uniform programId "normalMatrix"
         }
     | _ -> failwith "Program compilation failed"
 
