@@ -49,6 +49,17 @@ type meshWithNormals = {
         vertices : V3N3 []
     }
 
+let unitPlane =
+    let vertices = [ 
+        new Vector3(-0.5f, 0.0f, 0.5f)
+        new Vector3(0.5f, 0.0f, 0.5f)
+        new Vector3(0.5f, 0.0f, -0.5f)
+        new Vector3(-0.5f, 0.0f, -0.5f)]
+
+    {
+        meshWithNormals.vertices = vertices |> List.map (fun v -> new V3N3(v, Vector3.UnitY)) |> List.toArray
+    }
+
 let unitCubeWithNormals =
     let vertices = unitCube.indices |> Array.map (fun i -> unitCube.vertices.[int i])
     let normals = Array.zeroCreate<Vector3> vertices.Length

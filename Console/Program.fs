@@ -92,6 +92,7 @@ type FysicsWindow() =
     let clampIntegrationSpeed = clamp 0.01 2.0
     [<DefaultValue>] val mutable program : ShaderProgram
     [<DefaultValue>] val mutable program2 : ShaderProgram
+    let mutable cameraPosition : Vector3 = new Vector3(0.0f, 0.0f, 5.0f)
     let particleTemplate = {
             position = { x = 0.0; y = 4.0; z = 0.0 }
             velocity = { x = 0.0; y = 0.0; z = 0.0 }
@@ -104,6 +105,7 @@ type FysicsWindow() =
         this.program <- SimpleShaderProgram SimpleShaderProgram.makeSimpleShaderProgram
         this.program2 <- NormalDebugShaderProgram NormalDebugShaderProgram.makeSimpleShaderProgram
         GL.LineWidth(1.0f)
+        GL.ClearColor(Color.WhiteSmoke)
         GL.Enable(EnableCap.DepthTest)
         this.VSync <- VSyncMode.On
 
@@ -116,6 +118,10 @@ type FysicsWindow() =
             integrationSpeed <- 1.0
         if this.Keyboard.[Key.I] then do
             integrationSpeed <- clampIntegrationSpeed integrationSpeed - 0.01
+        if this.Keyboard.[Key.A] then do
+            cameraPosition <- Vector3.Transform(cameraPosition, Matrix4.CreateRotationY(float32 -e.Time))
+        if this.Keyboard.[Key.D] then do
+            cameraPosition <- Vector3.Transform(cameraPosition, Matrix4.CreateRotationY(float32 e.Time))
 
         particles <- particles 
             |> List.filter (fun p -> p.position.y > -50.0)
@@ -134,7 +140,7 @@ type FysicsWindow() =
         GL.Clear(ClearBufferMask.ColorBufferBit ||| ClearBufferMask.DepthBufferBit)
         let aspectRatio = (float)this.Width / (float)this.Height
         let projectionMatrix = Matrix4.CreatePerspectiveFieldOfView(2.0f, float32 aspectRatio, 0.1f, 100.0f)
-        let cameraMatrix = Matrix4.LookAt(new Vector3(5.0f, 1.0f, 5.0f), Vector3.Zero, Vector3.UnitY)
+        let cameraMatrix = Matrix4.LookAt(cameraPosition, Vector3.Zero, Vector3.UnitY)
 
         let staticRenderContext = {
                 ProjectionMatrix = projectionMatrix

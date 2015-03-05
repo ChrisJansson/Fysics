@@ -24,16 +24,17 @@ let fragmentShaderSource =
     "#version 400 
 
 uniform mat3 normalMatrix;
+uniform mat4 viewMatrix;
 
 out vec4 outColor;
 in vec3 vNormal;
 
-vec3 lightDir = vec3(-1.0, 0.0, 0.0);
+vec3 lightDir = normalize(vec3(-1.0, -0.2, 0.0));
 
 void main()
 {
     vec3 normal = normalize(normalMatrix * vNormal);
-    vec3 dirToLight = -lightDir;
+    vec3 dirToLight = -normalize((viewMatrix * vec4(lightDir, 0)).xyz);
     float incidence = clamp(0.0, 1.0, dot(normal, dirToLight));
     outColor = (incidence * vec4(1.0)) + vec4(0.2, 0.2, 0.2, 1.0);
 }"
