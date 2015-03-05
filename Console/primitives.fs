@@ -54,24 +54,31 @@ let unitPlane =
         new Vector3(-0.5f, 0.0f, 0.5f)
         new Vector3(0.5f, 0.0f, 0.5f)
         new Vector3(0.5f, 0.0f, -0.5f)
+        new Vector3(-0.5f, 0.0f, 0.5f)
+        new Vector3(0.5f, 0.0f, -0.5f)
         new Vector3(-0.5f, 0.0f, -0.5f)]
 
     {
         meshWithNormals.vertices = vertices |> List.map (fun v -> new V3N3(v, Vector3.UnitY)) |> List.toArray
     }
 
+let transformV3N3 (vn:V3N3) (transform:Matrix4) =
+    let transformVector v =
+        Vector3.Transform(v, transform)
+    let transformNormal n =
+        Vector3.TransformNormal(n, transform)
+    new V3N3(transformVector vn.Vertex, transformNormal vn.Normal)
+
+let transformMesh m (transform:Matrix4) = 
+    { vertices = m.vertices |> Array.map (fun vn -> transformV3N3 vn transform) }
+
 let unitCubeWithNormals =
-    let vertices = unitCube.indices |> Array.map (fun i -> unitCube.vertices.[int i])
-    let normals = Array.zeroCreate<Vector3> vertices.Length
-    for i = 0 to (vertices.Length / 3) - 1 do
-        let v0 = vertices.[i * 3]
-        let v1 = vertices.[i * 3 + 1]
-        let v2 = vertices.[i * 3 + 2]
-        let first = v1 - v0
-        let second = v2 - v0
-        let normal = Vector3.Cross(first, second).Normalized()
-        normals.[i * 3] <-  normal
-        normals.[i * 3 + 1] <-  normal
-        normals.[i * 3 + 2] <-  normal
-    { vertices = Array.zip vertices normals |> Array.map (fun (v, n) -> new V3N3(v, n))}
-        
+    let pi = float32 System.Math.PI
+    let transforms = [| 
+        Matrix4.CreateTranslation(0.0f, 0.5f, 0.0f) 
+        Matrix4.CreateRotationX(pi) * Matrix4.CreateTranslation(0.0f, -0.5f, 0.0f)
+        Matrix4.CreateRotationX(pi / 2.0f) * Matrix4.CreateTranslation(0.0f, 0.0f, 0.5f)
+        Matrix4.CreateRotationX(-pi / 2.0f) * Matrix4.CreateTranslation(0.0f, 0.0f, -0.5f)
+        Matrix4.CreateRotationZ(pi / 2.0f) * Matrix4.CreateTranslation(-0.5f, 0.0f, 0.0f)
+        Matrix4.CreateRotationZ(-pi / 2.0f) * Matrix4.CreateTranslation(0.5f, 0.0f, 0.0f) |]
+    { vertices = transforms |> Array.collect (fun t -> (transformMesh unitPlane t).vertices) }
