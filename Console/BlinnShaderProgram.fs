@@ -37,6 +37,7 @@ const vec3 ambientColor = vec3(0.0, 0.1, 0.0);
 const vec3 diffuseColor = vec3(0.7, 1.0, 0.7);
 const vec3 specColor = vec3(1.0, 1.0, 1.0);
 const vec4 lightPosition = vec4(10.0, 5.0, 0.0, 1.0);
+const float specularExp = 100.0;
 
 vec3 calculateDiffuse(vec3 diffuseColor, vec3 dirToLight, vec3 normal) {
     float incidence = dot(dirToLight, normal);
@@ -46,7 +47,7 @@ vec3 calculateDiffuse(vec3 diffuseColor, vec3 dirToLight, vec3 normal) {
 vec3 calculateSpecular(vec3 dirToLight, vec3 dirToEye, vec3 normal) {
     vec3 h = normalize(dirToLight + dirToEye);
     float specularAngle = max(0.0, dot(h, normal));
-    return pow(specularAngle, 100.0);
+    return pow(specularAngle, specularExp);
 }
 
 void main()
