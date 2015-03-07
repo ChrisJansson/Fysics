@@ -57,8 +57,9 @@
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="primitives.fs" />
     <Compile Include="shader.fs" />
-    <Compile Include="SimpleShaderProgram.fs" />
     <Compile Include="NormalDebugShaderProgram.fs" />
+    <Compile Include="SimpleShaderProgram.fs" />
+    <Compile Include="BlinnShaderProgram.fs" />
     <Compile Include="Rendering.fs" />
     <Compile Include="Program.fs" />
     <None Include="App.config" />

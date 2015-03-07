@@ -50,7 +50,7 @@ let linkProgram shaders =
 let makeProgram shaders =
     match compileShaders shaders with
     | Success shaderIds -> Some (linkProgram shaderIds)
-    | Error messages -> None
+    | Error messages -> failwith (messages |> List.reduce (fun l r -> l + " " + r))
 
 let glSetUniform uniformId (matrix:Matrix4d byref) =
     GL.UniformMatrix4(uniformId, false, &matrix)

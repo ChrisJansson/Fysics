@@ -63,10 +63,19 @@ let clamp min max v =
 type ShaderProgram =
     | SimpleShaderProgram of SimpleShaderProgram.SimpleProgram
     | NormalDebugShaderProgram of NormalDebugShaderProgram.SimpleProgram
+    | BlinnShaderProgram of BlinnShaderProgram.BlinnPhongProgram
 
 let render program renderJob =
     match program with
     | SimpleShaderProgram p ->
+        GL.UseProgram p.ProgramId
+        p.ProjectionMatrixUniform.set renderJob.StaticContext.ProjectionMatrix
+        p.ViewMatrix.set renderJob.StaticContext.ViewMatrix
+        for j in renderJob.RenderJobs do
+            p.ModelMatrix.set j.IndividualContext.ModelMatrix
+            p.NormalMatrix.set j.IndividualContext.NormalMatrix
+            drawMesh j.Mesh PrimitiveType.Triangles
+    | BlinnShaderProgram p ->
         GL.UseProgram p.ProgramId
         p.ProjectionMatrixUniform.set renderJob.StaticContext.ProjectionMatrix
         p.ViewMatrix.set renderJob.StaticContext.ViewMatrix
@@ -108,8 +117,10 @@ type FysicsWindow() =
 
     override this.OnLoad(e) =
         transferMeshWithNormals unitCubeWithNormals
-        this.program <- SimpleShaderProgram SimpleShaderProgram.makeSimpleShaderProgram
+        this.program <- BlinnShaderProgram BlinnShaderProgram.makeBlinnShaderProgram
+//        this.program <- SimpleShaderProgram SimpleShaderProgram.makeSimpleShaderProgram
         this.program2 <- NormalDebugShaderProgram NormalDebugShaderProgram.makeSimpleShaderProgram
+
         GL.LineWidth(1.0f)
         GL.ClearColor(Color.WhiteSmoke)
         GL.Enable(EnableCap.DepthTest)
