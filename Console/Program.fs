@@ -82,10 +82,16 @@ let render program renderJob =
             p.ModelMatrix.set j.IndividualContext.ModelMatrix
             p.NormalMatrix.set j.IndividualContext.NormalMatrix
             drawMesh j.Mesh PrimitiveType.Points
-    
         
+let fsaaSamples = 8
+let windowGraphicsMode =
+    new Graphics.GraphicsMode(
+            Graphics.GraphicsMode.Default.ColorFormat, 
+            Graphics.GraphicsMode.Default.Depth, 
+            Graphics.GraphicsMode.Default.Stencil,
+            fsaaSamples)
 type FysicsWindow() = 
-    inherit GameWindow()
+    inherit GameWindow( 800, 600, windowGraphicsMode) 
 
     let mutable integrationSpeed = 1.0
     let mutable particles = List.empty<particle>
