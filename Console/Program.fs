@@ -100,7 +100,7 @@ let windowGraphicsMode =
             Graphics.GraphicsMode.Default.Stencil,
             fsaaSamples)
 type FysicsWindow() = 
-    inherit GameWindow( 800, 600, windowGraphicsMode) 
+    inherit GameWindow(800, 600, windowGraphicsMode) 
 
     let mutable integrationSpeed = 1.0
     let mutable particles = List.empty<particle>
