@@ -8,6 +8,8 @@ open OpenTK
 open OpenTK.Input
 open OpenTK.Graphics.OpenGL
 open System.Drawing
+open AntTweakBar
+open TweakBar
 
 let transferMesh (m:mesh) =
     let vbos = Array.zeroCreate<int> 2
@@ -91,6 +93,13 @@ let render program renderJob =
             p.ModelMatrix.set j.IndividualContext.ModelMatrix
             p.NormalMatrix.set j.IndividualContext.NormalMatrix
             drawMesh j.Mesh PrimitiveType.Points
+
+let configureTweakBar c =
+    let bar = new Bar(c)
+    bar.Label <- "Stuff"
+    bar.Contained <- true
+    let doubleVariable = new DoubleVariable(bar)
+    doubleVariable.Label <- "Integration speed"
         
 let fsaaSamples = 8
 let windowGraphicsMode =
@@ -105,6 +114,7 @@ type FysicsWindow() =
     let mutable integrationSpeed = 1.0
     let mutable particles = List.empty<particle>
     let clampIntegrationSpeed = clamp 0.01 2.0
+    [<DefaultValue>] val mutable tweakbarContext : Context
     [<DefaultValue>] val mutable program : ShaderProgram
     [<DefaultValue>] val mutable program2 : ShaderProgram
     let mutable cameraPosition : Vector3 = new Vector3(0.0f, 0.0f, 5.0f)
@@ -120,11 +130,16 @@ type FysicsWindow() =
         this.program <- BlinnShaderProgram BlinnShaderProgram.makeBlinnShaderProgram
 //        this.program <- SimpleShaderProgram SimpleShaderProgram.makeSimpleShaderProgram
         this.program2 <- NormalDebugShaderProgram NormalDebugShaderProgram.makeSimpleShaderProgram
+        this.tweakbarContext <- new Context(Tw.GraphicsAPI.OpenGL)
+        configureTweakBar this.tweakbarContext
 
         GL.LineWidth(1.0f)
         GL.ClearColor(Color.WhiteSmoke)
         GL.Enable(EnableCap.DepthTest)
         this.VSync <- VSyncMode.On
+
+    override this.OnClosing(e) =
+        this.tweakbarContext.Dispose()
 
     override this.OnUpdateFrame(e) =
         if this.Keyboard.[Key.Escape] then do
@@ -147,11 +162,35 @@ type FysicsWindow() =
             |> Seq.toList
 
     override this.OnKeyUp(e) =
+        match convertKeyEvent e with
+        | Some keys -> 
+            this.tweakbarContext.HandleKeyUp(keys.Key, keys.Modifiers) |> ignore
+        | _ -> ()
+
         if(e.Key = Key.Space) then do
             particles <- particleTemplate :: particles
 
+    override this.OnKeyDown(e) =
+        match convertKeyEvent e with
+        | Some keys -> 
+            this.tweakbarContext.HandleKeyDown(keys.Key, keys.Modifiers) |> ignore
+        | None -> ()
+
+    override this.OnKeyPress(e) =
+        this.tweakbarContext.HandleKeyPress(e.KeyChar) |> ignore
+
+    override this.OnMouseMove(e) =
+        this.tweakbarContext.HandleMouseMove(new Point(e.X, e.Y)) |> ignore
+
+    override this.OnMouseDown(e) =
+        this.tweakbarContext.HandleMouseClick(Tw.MouseAction.Pressed, Tw.MouseButton.Left) |> ignore
+
+    override this.OnMouseUp(e) =
+        this.tweakbarContext.HandleMouseClick(Tw.MouseAction.Released, Tw.MouseButton.Left) |> ignore
+
     override this.OnResize(e) =
         GL.Viewport(0, 0, this.Width, this.Height)
+        this.tweakbarContext.HandleResize(this.ClientSize)
 
     override this.OnRenderFrame(e) =
         GL.Clear(ClearBufferMask.ColorBufferBit ||| ClearBufferMask.DepthBufferBit)
@@ -170,6 +209,8 @@ type FysicsWindow() =
 
         render this.program renderJob
         render this.program2 renderJob
+
+        this.tweakbarContext.Draw()
 
         this.SwapBuffers();
 
