@@ -10,6 +10,7 @@ open OpenTK.Graphics.OpenGL
 open System.Drawing
 open AntTweakBar
 open TweakBar
+open TweakBarGui
 
 let transferMesh (m:mesh) =
     let vbos = Array.zeroCreate<int> 2
@@ -94,12 +95,12 @@ let render program renderJob =
             p.NormalMatrix.set j.IndividualContext.NormalMatrix
             drawMesh j.Mesh PrimitiveType.Points
 
-let configureTweakBar c =
+let configureTweakBar c vm =
     let bar = new Bar(c)
+    bar.Size <- new Size(300, bar.Size.Height)
     bar.Label <- "Stuff"
     bar.Contained <- true
-    let doubleVariable = new DoubleVariable(bar)
-    doubleVariable.Label <- "Integration speed"
+    mapViewModel vm bar
         
 let fsaaSamples = 8
 let windowGraphicsMode =
@@ -111,9 +112,8 @@ let windowGraphicsMode =
 type FysicsWindow() = 
     inherit GameWindow(800, 600, windowGraphicsMode) 
 
-    let mutable integrationSpeed = 1.0
     let mutable particles = List.empty<particle>
-    let clampIntegrationSpeed = clamp 0.01 2.0
+    let mutable vm = new ViewModel()
     [<DefaultValue>] val mutable tweakbarContext : Context
     [<DefaultValue>] val mutable program : ShaderProgram
     [<DefaultValue>] val mutable program2 : ShaderProgram
@@ -131,7 +131,7 @@ type FysicsWindow() =
 //        this.program <- SimpleShaderProgram SimpleShaderProgram.makeSimpleShaderProgram
         this.program2 <- NormalDebugShaderProgram NormalDebugShaderProgram.makeSimpleShaderProgram
         this.tweakbarContext <- new Context(Tw.GraphicsAPI.OpenGL)
-        configureTweakBar this.tweakbarContext
+        configureTweakBar this.tweakbarContext vm
 
         GL.LineWidth(1.0f)
         GL.ClearColor(Color.WhiteSmoke)
@@ -144,12 +144,6 @@ type FysicsWindow() =
     override this.OnUpdateFrame(e) =
         if this.Keyboard.[Key.Escape] then do
             this.Exit()
-        if this.Keyboard.[Key.P] then do
-            integrationSpeed <- clampIntegrationSpeed integrationSpeed + 0.01
-        if this.Keyboard.[Key.O] then do
-            integrationSpeed <- 1.0
-        if this.Keyboard.[Key.I] then do
-            integrationSpeed <- clampIntegrationSpeed integrationSpeed - 0.01
         if this.Keyboard.[Key.A] then do
             cameraPosition <- Vector3.Transform(cameraPosition, Matrix4.CreateRotationY(float32 -e.Time))
         if this.Keyboard.[Key.D] then do
@@ -158,7 +152,7 @@ type FysicsWindow() =
         particles <- particles 
             |> List.filter (fun p -> p.position.y > -50.0)
             |> List.toSeq 
-            |> integrateAll (e.Time * integrationSpeed)
+            |> integrateAll (e.Time * vm.IntegrationSpeed)
             |> Seq.toList
 
     override this.OnKeyUp(e) =
