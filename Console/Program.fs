@@ -11,6 +11,7 @@ open System.Drawing
 open AntTweakBar
 open TweakBar
 open TweakBarGui
+open BlinnMaterialTweakBar
 open System.Reactive.Linq
 open System.Linq
 
