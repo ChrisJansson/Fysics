@@ -4,13 +4,14 @@ uniform mat3 normalMatrix;
 uniform mat4 viewMatrix;
 uniform mat4 modelMatrix;
 
+uniform vec3 ambientColor;
+uniform vec3 diffuseColor;
+uniform vec3 specColor;
+
 out vec4 outColor;
 in vec3 vNormal;
 in vec3 vPosition;
 
-const vec3 ambientColor = vec3(0.0, 0.1, 0.0);
-const vec3 diffuseColor = vec3(0.7, 1.0, 0.7);
-const vec3 specColor = vec3(1.0, 1.0, 1.0);
 const vec4 lightPosition = vec4(1.0);
 const float specularExp = 150.0;
 

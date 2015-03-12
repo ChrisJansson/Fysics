@@ -76,4 +76,11 @@ let makeMatrixUniform (programId:int) uniformName =
 let makeMatrix3Uniform (programId:int) uniformName =
     let uniformLocation = GL.GetUniformLocation(programId, uniformName)
     { Matrix3Uniform.set = uniformSetterForMatrix3 uniformLocation }
+
+type Vector3Uniform = { set : OpenTK.Vector3 -> unit }
+
+let makeVector3Uniform (programId:int) uniformName =
+    let uniformLocation = GL.GetUniformLocation(programId, uniformName)
+    { Vector3Uniform.set = fun v -> GL.Uniform3(uniformLocation, v) }
+
     

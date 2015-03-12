@@ -11,6 +11,8 @@ open System.Drawing
 open AntTweakBar
 open TweakBar
 open TweakBarGui
+open System.Reactive.Linq
+open System.Linq
 
 let transferMesh (m:mesh) =
     let vbos = Array.zeroCreate<int> 2
@@ -82,6 +84,13 @@ let render program renderJob =
         GL.UseProgram p.ProgramId
         p.ProjectionMatrixUniform.set renderJob.StaticContext.ProjectionMatrix
         p.ViewMatrix.set renderJob.StaticContext.ViewMatrix
+        match renderJob.Material with
+        | Blinn m -> 
+            p.AmbientColor.set m.AmbientColor
+            p.DiffuseColor.set m.DiffuseColor
+            p.SpecularColor.set m.SpecularColor
+            ()
+        | _ -> ()
         for j in renderJob.RenderJobs do
             p.ModelMatrix.set j.IndividualContext.ModelMatrix
             p.NormalMatrix.set j.IndividualContext.NormalMatrix
@@ -95,12 +104,12 @@ let render program renderJob =
             p.NormalMatrix.set j.IndividualContext.NormalMatrix
             drawMesh j.Mesh PrimitiveType.Points
 
-let configureTweakBar c vm =
+let configureTweakBar c defaultValue =
     let bar = new Bar(c)
     bar.Size <- new Size(300, bar.Size.Height)
     bar.Label <- "Stuff"
     bar.Contained <- true
-    mapViewModel vm bar
+    makeBlinnMaterialView bar defaultValue
         
 let fsaaSamples = 8
 let windowGraphicsMode =
@@ -113,10 +122,17 @@ type FysicsWindow() =
     inherit GameWindow(800, 600, windowGraphicsMode) 
 
     let mutable particles = List.empty<particle>
-    let mutable vm = new ViewModel()
     [<DefaultValue>] val mutable tweakbarContext : Context
     [<DefaultValue>] val mutable program : ShaderProgram
     [<DefaultValue>] val mutable program2 : ShaderProgram
+    [<DefaultValue>] val mutable blinn : System.IObservable<BlinnMaterial>
+    let defaultBlinnMaterial = { 
+        AmbientColor = new Vector3(0.1f, 0.1f, 0.1f); 
+        DiffuseColor = new Vector3(0.4f, 0.7f, 0.4f); 
+        SpecularColor = new Vector3(1.0f, 1.0f, 1.0f); 
+        SpecularExp = 150.0 }
+
+    let mutable blinnMaterial : BlinnMaterial = defaultBlinnMaterial
     let mutable cameraPosition : Vector3 = new Vector3(0.0f, 0.0f, 5.0f)
     let particleTemplate = {
             position = { x = 0.0; y = 4.0; z = 0.0 }
@@ -131,8 +147,8 @@ type FysicsWindow() =
 //        this.program <- SimpleShaderProgram SimpleShaderProgram.makeSimpleShaderProgram
         this.program2 <- NormalDebugShaderProgram NormalDebugShaderProgram.makeSimpleShaderProgram
         this.tweakbarContext <- new Context(Tw.GraphicsAPI.OpenGL)
-        configureTweakBar this.tweakbarContext vm
-
+        this.blinn <- configureTweakBar this.tweakbarContext defaultBlinnMaterial
+        this.blinn.Subscribe(fun m -> blinnMaterial <- m) |> ignore
         GL.LineWidth(1.0f)
         GL.ClearColor(Color.WhiteSmoke)
         GL.Enable(EnableCap.DepthTest)
@@ -152,7 +168,7 @@ type FysicsWindow() =
         particles <- particles 
             |> List.filter (fun p -> p.position.y > -50.0)
             |> List.toSeq 
-            |> integrateAll (e.Time * vm.IntegrationSpeed)
+            |> integrateAll (e.Time * 1.0)
             |> Seq.toList
 
     override this.OnKeyUp(e) =
@@ -199,6 +215,7 @@ type FysicsWindow() =
         let renderJob = {
                 StaticContext = staticRenderContext
                 RenderJobs = particles |> List.map (fun p -> makeRenderJob p unitCubeWithNormals cameraMatrix)
+                Material = Blinn({ Rendering.BlinnMaterial.AmbientColor = blinnMaterial.AmbientColor; DiffuseColor = blinnMaterial.DiffuseColor; SpecularColor = blinnMaterial.SpecularColor})
             }
 
         render this.program renderJob

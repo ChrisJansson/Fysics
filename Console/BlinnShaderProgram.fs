@@ -15,6 +15,9 @@ type BlinnPhongProgram = {
         ViewMatrix : MatrixUniform
         ModelMatrix : MatrixUniform
         NormalMatrix : Matrix3Uniform
+        AmbientColor : Vector3Uniform
+        DiffuseColor : Vector3Uniform
+        SpecularColor : Vector3Uniform
     }
 
 let makeBlinnShaderProgram =
@@ -26,6 +29,9 @@ let makeBlinnShaderProgram =
             ViewMatrix = makeMatrixUniform programId "viewMatrix"
             ModelMatrix = makeMatrixUniform programId "modelMatrix"
             NormalMatrix = makeMatrix3Uniform programId "normalMatrix"
+            AmbientColor = makeVector3Uniform programId "ambientColor"
+            DiffuseColor = makeVector3Uniform programId "diffuseColor"
+            SpecularColor = makeVector3Uniform programId "specColor"
         }
     | _ -> failwith "Program compilation failed"
 

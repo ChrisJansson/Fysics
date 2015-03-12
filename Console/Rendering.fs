@@ -17,8 +17,20 @@ type IndividualRenderJob = {
         Mesh : meshWithNormals
     }
 
+type BlinnMaterial = {
+        AmbientColor : Vector3
+        DiffuseColor : Vector3
+        SpecularColor : Vector3
+    }
+
+type MaterialType =
+    | Blinn of BlinnMaterial
+    | NoMaterial
+
 type RenderJob = {
         StaticContext : StaticRenderContext
         RenderJobs : list<IndividualRenderJob>
+        Material : MaterialType
     }
+
 
