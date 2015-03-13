@@ -12,6 +12,7 @@ open AntTweakBar
 open TweakBar
 open TweakBarGui
 open BlinnMaterialTweakBar
+open TweakBarGuiViewModel
 open System.Reactive.Linq
 open System.Linq
 
@@ -110,7 +111,7 @@ let configureTweakBar c defaultValue =
     bar.Size <- new Size(300, bar.Size.Height)
     bar.Label <- "Stuff"
     bar.Contained <- true
-    makeBlinnMaterialView bar defaultValue
+    makeViewModel bar defaultValue
         
 let fsaaSamples = 8
 let windowGraphicsMode =
@@ -132,8 +133,9 @@ type FysicsWindow() =
         DiffuseColor = new Vector3(0.4f, 0.7f, 0.4f); 
         SpecularColor = new Vector3(1.0f, 1.0f, 1.0f); 
         SpecularExp = 150.0 }
+    let defaultVm = { IntegrationSpeed = 1.0; BlinnMaterial = defaultBlinnMaterial }
 
-    let mutable blinnMaterial : BlinnMaterial = defaultBlinnMaterial
+    let mutable vm : ViewModel = defaultVm
     let mutable cameraPosition : Vector3 = new Vector3(0.0f, 0.0f, 5.0f)
     let particleTemplate = {
             position = { x = 0.0; y = 4.0; z = 0.0 }
@@ -148,8 +150,8 @@ type FysicsWindow() =
 //        this.program <- SimpleShaderProgram SimpleShaderProgram.makeSimpleShaderProgram
         this.program2 <- NormalDebugShaderProgram NormalDebugShaderProgram.makeSimpleShaderProgram
         this.tweakbarContext <- new Context(Tw.GraphicsAPI.OpenGL)
-        this.blinn <- configureTweakBar this.tweakbarContext defaultBlinnMaterial
-        this.blinn.Subscribe(fun m -> blinnMaterial <- m) |> ignore
+        let vmObs = configureTweakBar this.tweakbarContext defaultVm
+        vmObs.Subscribe(fun m -> vm <- m) |> ignore
         GL.LineWidth(1.0f)
         GL.ClearColor(Color.WhiteSmoke)
         GL.Enable(EnableCap.DepthTest)
@@ -169,7 +171,7 @@ type FysicsWindow() =
         particles <- particles 
             |> List.filter (fun p -> p.position.y > -50.0)
             |> List.toSeq 
-            |> integrateAll (e.Time * 1.0)
+            |> integrateAll (e.Time * vm.IntegrationSpeed)
             |> Seq.toList
 
     override this.OnKeyUp(e) =
@@ -208,6 +210,8 @@ type FysicsWindow() =
         let aspectRatio = (float)this.Width / (float)this.Height
         let projectionMatrix = Matrix4.CreatePerspectiveFieldOfView(2.0f, float32 aspectRatio, 0.1f, 100.0f)
         let cameraMatrix = Matrix4.LookAt(cameraPosition, Vector3.Zero, Vector3.UnitY)
+
+        let blinnMaterial = vm.BlinnMaterial
 
         let staticRenderContext = {
                 ProjectionMatrix = projectionMatrix
