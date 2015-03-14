@@ -6,5 +6,6 @@ open vector
             velocity : vector3
             acceleration : vector3
             damping : float
+            forceAccumulator : vector3
         }
 

@@ -142,6 +142,7 @@ type FysicsWindow() =
             velocity = { x = 0.0; y = 0.0; z = 0.0 }
             acceleration = { x = 0.0; y = -9.8; z = 0.0 }
             damping = 0.999
+            forceAccumulator = { x = 0.0; y = 0.0; z = 0.0 }
         }
 
     override this.OnLoad(e) =
