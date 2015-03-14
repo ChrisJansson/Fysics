@@ -80,6 +80,7 @@
     <Compile Include="vector.fs" />
     <Compile Include="particle.fs" />
     <Compile Include="integrator.fs" />
+    <Compile Include="ForceGenerators.fs" />
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="primitives.fs" />
     <Compile Include="shader.fs" />

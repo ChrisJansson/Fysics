@@ -24,3 +24,11 @@
             y = a.z * b.x - a.x * b.z
             z = a.x * b.y - a.y * b.x }
 
+    let magnitude a =
+         sqrt a.x * a.x + a.y * a.y + a.z + a.z
+
+    let normalize a =
+        let m = magnitude a
+        (1.0 / m) * a
+        
+
